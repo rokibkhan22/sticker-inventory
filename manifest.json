@@ -1,0 +1,82 @@
+{
+  "name": "Sticker Stock Manager",
+  "short_name": "SStock",
+  "description": "Multi-device sticker inventory management app with Google Sheets sync",
+  "start_url": "/sticker-inventory/",
+  "scope": "/sticker-inventory/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "icons": [
+    {
+      "src": "sstok.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "sstok.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "sstok.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "business"],
+  "screenshots": [
+    {
+      "src": "sstok.jpg",
+      "sizes": "540x720",
+      "type": "image/jpeg",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "sstok.jpg",
+      "sizes": "1280x720",
+      "type": "image/jpeg",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Stock",
+      "short_name": "Add",
+      "description": "Quickly add received stickers",
+      "url": "/sticker-inventory/?action=receive",
+      "icons": [
+        {
+          "src": "sstok.jpg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Record Consumption",
+      "short_name": "Consume",
+      "description": "Record consumed stickers",
+      "url": "/sticker-inventory/?action=consume",
+      "icons": [
+        {
+          "src": "sstok.jpg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/sticker-inventory/",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
