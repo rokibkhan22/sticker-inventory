@@ -46,6 +46,11 @@
             color: var(--danger);
         }
 
+        .sync-status.loading {
+            background-color: #dbeafe;
+            color: var(--primary);
+        }
+
         .summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -109,7 +114,8 @@
         .btn-receive { background: var(--primary); color: white; }
         .btn-consume { background: var(--danger); color: white; }
         .btn-export { background: #64748b; color: white; margin-bottom: 20px; width: auto; margin-right: 10px; }
-        .btn-sync { background: var(--success); color: white; margin-bottom: 20px; width: auto; }
+        .btn-sync { background: var(--success); color: white; margin-bottom: 20px; width: auto; margin-right: 10px; }
+        .btn-reload { background: #8b5cf6; color: white; margin-bottom: 20px; width: auto; }
 
         .table-container {
             background: var(--card);
@@ -161,6 +167,15 @@
             margin-bottom: 10px;
         }
 
+        .info-box {
+            background: #f0f9ff;
+            border-left: 4px solid var(--primary);
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+
         @media (max-width: 600px) {
             body { padding: 10px; }
             .summary-grid { grid-template-columns: 1fr; }
@@ -171,11 +186,15 @@
 <body>
 
 <div class="sync-status" id="syncStatus">
-    <span id="syncText">Ready</span>
+    <span id="syncText">Loading...</span>
 </div>
 
 <div class="container">
     <h2>Sticker Stock Management</h2>
+
+    <div class="info-box">
+        💡 <strong>Tip:</strong> Click "🔄 Reload from Sheets" to load the latest data from Google Sheets on any device.
+    </div>
 
     <div class="setup-section" id="setupSection">
         <h4>⚙️ Google Sheets Setup</h4>
@@ -188,6 +207,7 @@
     <div style="margin-bottom: 20px;">
         <button onclick="toggleSetup()" class="btn-export">⚙️ Configure Sheets</button>
         <button onclick="syncWithSheets()" class="btn-sync">☁️ Sync Now</button>
+        <button onclick="loadFromSheets()" class="btn-reload">🔄 Reload from Sheets</button>
     </div>
 
     <div class="summary-grid">
@@ -269,15 +289,19 @@
     let scriptUrl = localStorage.getItem('scriptUrl') || '';
 
     window.onload = () => {
-        loadLocalData();
-        render();
+        updateSyncStatus('loading', 'Loading data...');
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('r-date').value = today;
         document.getElementById('c-date').value = today;
         
         if (scriptUrl) {
             document.getElementById('scriptUrl').value = scriptUrl;
-            syncWithSheets();
+            // Automatically load from Google Sheets on app load
+            loadFromSheets();
+        } else {
+            loadLocalData();
+            render();
+            updateSyncStatus('synced', 'Ready (local mode)');
         }
     };
 
@@ -301,6 +325,51 @@
         const textEl = document.getElementById('syncText');
         statusEl.className = 'sync-status ' + status;
         textEl.textContent = message;
+    }
+
+    async function loadFromSheets() {
+        if (!scriptUrl) {
+            alert('Please configure your Google Sheets URL first');
+            toggleSetup();
+            return;
+        }
+
+        updateSyncStatus('loading', 'Loading from Sheets...');
+
+        try {
+            const response = await fetch(scriptUrl + '?action=get');
+            const result = await response.json();
+            
+            if (result.success && result.data && result.data.length > 1) {
+                // Skip header row (index 0)
+                transactions = result.data.slice(1).map((row, index) => ({
+                    id: index + Date.now(), // Generate unique ID
+                    date: row[0],
+                    type: row[1],
+                    ir: row[2],
+                    qty: parseInt(row[3]) || 0,
+                    notes: row[4] || ''
+                }));
+                
+                // Save to local storage
+                localStorage.setItem('sticker_data', JSON.stringify(transactions));
+                render();
+                updateSyncStatus('synced', '✓ Loaded from Sheets');
+                setTimeout(() => {
+                    updateSyncStatus('synced', 'Ready');
+                }, 3000);
+            } else {
+                // No data in sheets yet
+                loadLocalData();
+                render();
+                updateSyncStatus('synced', 'Ready (no data in Sheets)');
+            }
+        } catch (error) {
+            console.error('Load error:', error);
+            loadLocalData();
+            render();
+            updateSyncStatus('error', '✗ Load failed, using local data');
+        }
     }
 
     async function syncWithSheets() {
